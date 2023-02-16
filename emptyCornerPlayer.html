@@ -1,268 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Player</title>
-    <style>
-      body {
-        background-color: pink;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player</title>
+  <style>
+    body {
+      background-color: pink;
+    }
+
+    .corner {
+      position: absolute;
+      overflow: hidden;
+      width: 50%;
+      height: 50%;
+      z-index: 0;
+    }
+
+    video {
+      position: absolute;
+      min-width: 100%;
+      min-height: 100%;
+      width: 50%;
+      height: auto;
+    }
+
+    #controlsContainer>* {
+      position: absolute;
+      top: 0px;
+      z-index: 1;
+    }
+
+    #speedSlider {
+      left: 75px;
+    }
+
+    #speedDisplay {
+      left: 250px;
+    }
+
+    #filepicker {
+      left: 300px;
+    }
+
+    #ULcorner {
+      top: 0px;
+      left: 0px;
+    }
+
+    #URcorner {
+      top: 0px;
+      left: 50%;
+    }
+
+    #LLcorner {
+      top: 50%;
+      left: 0px;
+    }
+
+    #LRcorner {
+      top: 50%;
+      left: 50%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="controlsContainer">
+    <input id="playButton" type="button" onclick="play()" value="Play" />
+    <input id="speedSlider" type="range" onchange="updateSpeed(this.value*0.1)" min="0" max="50" value="1" />
+    <input id="filepicker" type="file" name="selector"
+      accept="video/mp4, video/webm" webkitdirectory>
+    <span id="speedDisplay"></span>
+  </div>
+  <div id="ULcorner" class="corner">
+    <video id="UL" controls></video>
+  </div>
+  <div id="URcorner" class="corner">
+    <video id="UR" controls></video>
+  </div>
+  <div id="LLcorner" class="corner">
+    <video id="LL" controls></video>
+  </div>
+  <div id="LRcorner" class="corner">
+    <video id="LR" controls></video>
+  </div>
+
+  <script type="text/javascript">
+
+    var groups = [];
+
+    filepicker.addEventListener('change', (event) => {
+      const dir = event.target.files;
+      f = [];
+      for (const file of dir) {
+        console.log(file);
+        currPath = "";
+        if (file.name.split('.').pop() == "mp4" ||
+          file.name.split('.').pop() == "webm") {
+          newPath = file.webkitRelativePath;
+          if (samePath(currPath, newPath)){
+            f.push(newPath);
+            currPath = newPath;
+          } else {
+            groups.push({files: f});
+            f = [];
+          }
+          console.log(`added ${newPath}`);
+        }
       }
+      // groups.push({files: f});
+      console.log(groups);
+      testPlay();
+    });
 
-      .corner {
-        position: absolute;
-        overflow: hidden;
-        width: 50%;
-        height: 50%;
-        z-index: 0;
-      }
+    function testPlay(p1, p2) {
+      ULtest = document.getElementById("UL")
+      s = document.createElement("source");
+      s.src = groups[0].files[0];
+      ULtest.appendChild(s);
+    }
 
-      video {
-        position: absolute;
-        min-width: 100%;
-        min-height: 100%;
-        width: 50%;
-        height: auto;
-      }
+    function samePath(p1, p2) {
+      p1sub = p1.substring(0, 10);
+      p2sub = p2.substring(0, 10)
+      return p1sub === p2sub;
+    }
 
-      #controlsContainer > * {
-        position: absolute;
-        top: 0px;
-        z-index: 1;
-      }
+    ////////////////////////////////////////////////////////////////
 
-      #speedSlider {
-        left: 75px;
-      }
+    input = "all";
+    randomInit = true;
+    groupIndices = [0, 1, 2, 5];
+    playbackSpeed = 1.5;
 
-      #speedDisplay {
-        left: 250px;
-      }
+    pattern = "rotate";
+    // pattern = "loop";
 
-      #ULcorner {
-        top: 0px;
-        left: 0px;
-      }
+    var players = {};
+    document.getElementById("speedDisplay").innerHTML =
+      playbackSpeed.toFixed(1);
 
-      #URcorner {
-        top: 0px;
-        left: 50%;
-      }
-
-      #LLcorner {
-        top: 50%;
-        left: 0px;
-      }
-
-      #LRcorner {
-        top: 50%;
-        left: 50%;
-      }
-    </style>
-  </head>
-
-  <body>
-    <div id="controlsContainer">
-      <input id="playButton" type="button" onclick="play()" value="Play" />
-      <input
-        id="speedSlider"
-        type="range"
-        onchange="updateSpeed(this.value*0.1)"
-        min="0"
-        max="50"
-        value="1"
-      />
-      <span id="speedDisplay"></span>
-    </div>
-    <div id="ULcorner" class="corner">
-      <video id="UL" controls></video>
-    </div>
-    <div id="URcorner" class="corner">
-      <video id="UR" controls></video>
-    </div>
-    <div id="LLcorner" class="corner">
-      <video id="LL" controls></video>
-    </div>
-    <div id="LRcorner" class="corner">
-      <video id="LR" controls></video>
-    </div>
-
-    <script type="text/javascript">
-
-      var groups = [];
-
-      ////////////////////////////////////////////////////////////////
-      
-      input = "all";
-      randomInit = true;
-      groupIndices = [0, 1, 2, 5];
-      playbackSpeed = 1.5;
-
-      pattern = "rotate";
-      // pattern = "loop";
-
-      var players = {};
+    function updateSpeed(value) {
+      playbackSpeed = value;
       document.getElementById("speedDisplay").innerHTML =
         playbackSpeed.toFixed(1);
-
-      function updateSpeed(value) {
-        playbackSpeed = value;
-        document.getElementById("speedDisplay").innerHTML =
-          playbackSpeed.toFixed(1);
-        if (players.length === 0) {
-          return;
-        }
-        for (let key in players) {
-          refreshPlayer(players[key]);
-        }
+      if (players.length === 0) {
+        return;
       }
+      for (let key in players) {
+        refreshPlayer(players[key]);
+      }
+    }
 
-      // fetch("json/" + input + ".json")
-      //   .then(response => response.json())
-      //   .then(data => {
-      //     groups = data;
-      //   });
+    // fetch("json/" + input + ".json")
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     groups = data;
+    //   });
 
-      console.log(groups);
+    function play() {
+      if (groups === undefined) {
+        console.log("Groups not found");
+        return;
+      }
+      document.getElementById("playButton").value = "Refresh";
+      main();
+    }
 
-      function play() {
-        if (groups === undefined) {
-          console.log("Groups not found");
-          return;
+    function main() {
+      players = getPlayers();
+      initSources(players);
+      for (let key in players) refreshPlayer(players[key]);
+      setPattern(players, pattern);
+    }
+
+    function setPattern(players, p) {
+      for (let key in players) {
+        if (p === "rotate") {
+          rotateOnEnded(players[key]);
+        } else if (p === "loop") {
+          incrementOnEnded(players[key]);
+        } else {
+          console.log("Pattern not recognized: " + p);
         }
-        document.getElementById("playButton").value = "Refresh";
-        main();
+        players[key].playbackRate = playbackSpeed;
       }
+    }
 
-      function main() {
-        players = getPlayers();
-        initSources(players);
-        for (let key in players) refreshPlayer(players[key]);
-        setPattern(players, pattern);
+    function getPlayers() {
+      players = {};
+      ids = ["UR", "UL", "LL", "LR"];
+      for (const key of ids) {
+        players[key] = document.getElementById(key);
       }
+      return players;
+    }
 
-      function setPattern(players, p) {
-        for (let key in players) {
-          if (p === "rotate") {
-            rotateOnEnded(players[key]);
-          } else if (p === "loop") {
-            incrementOnEnded(players[key]);
-          } else {
-            console.log("Pattern not recognized: " + p);
-          }
-          players[key].playbackRate = playbackSpeed;
-        }
+    function initSources(players) {
+      var i = 0;
+      for (let key in players) {
+        players[key].innerHTML = "";
+        players[key].source = players[key].appendChild(
+          randomInit ? makeSource(randomGroup()) : makeSource(groupIndices[i])
+        );
+        i++;
       }
+    }
 
-      function getPlayers() {
-        players = {};
-        ids = ["UR", "UL", "LL", "LR"];
-        for (const key of ids) {
-          players[key] = document.getElementById(key);
-        }
-        return players;
-      }
+    function makeSource(groupIndex) {
+      s = document.createElement("source");
+      s.src = groups[groupIndex].files[0];
+      s.groupIndex = groupIndex;
+      s.groupSize = groups[groupIndex].files.length;
+      s.i = 0;
+      s.class = "source";
+      return s;
+    }
 
-      function initSources(players) {
-        var i = 0;
-        for (let key in players) {
-          players[key].innerHTML = "";
-          players[key].source = players[key].appendChild(
-            randomInit ? makeSource(randomGroup()) : makeSource(groupIndices[i])
-          );
-          i++;
-        }
-      }
+    function incrementOnEnded(player) {
+      player.onended = function (e) {
+        incrementSource(player.source);
+        refreshPlayer(player);
+      };
+    }
 
-      function makeSource(groupIndex) {
-        s = document.createElement("source");
-        s.src = groups[groupIndex].files[0];
-        s.groupIndex = groupIndex;
-        s.groupSize = groups[groupIndex].files.length;
+    function incrementSource(s) {
+      s.i++;
+      if (s.i >= s.groupSize) {
         s.i = 0;
-        s.class = "source";
-        return s;
       }
+      s.src = groups[s.groupIndex].files[s.i];
+    }
 
-      function incrementOnEnded(player) {
-        player.onended = function (e) {
+    function rotateOnEnded(player) {
+      player.onended = function (e) {
+        console.log(player.id + " source: " + player.source.i);
+        if (player.id === "UL" && player.source.i == 1) {
+          rotateCorners();
+        } else {
           incrementSource(player.source);
           refreshPlayer(player);
-        };
-      }
-
-      function incrementSource(s) {
-        s.i++;
-        if (s.i >= s.groupSize) {
-          s.i = 0;
         }
-        s.src = groups[s.groupIndex].files[s.i];
-      }
+      };
+    }
 
-      function rotateOnEnded(player) {
-        player.onended = function (e) {
-          console.log(player.id + " source: " + player.source.i);
-          if (player.id === "UL" && player.source.i == 1) {
-            rotateCorners();
-          } else {
-            incrementSource(player.source);
-            refreshPlayer(player);
-          }
-        };
-      }
+    function rotateCorners() {
+      console.log("Rotating corners");
+      changeGroup(players.LR, players.LL.source.groupIndex, 6);
+      changeGroup(players.LL, players.UR.source.groupIndex, 4);
+      changeGroup(players.UR, players.UL.source.groupIndex, 2);
+      changeGroup(players.UL, randomGroup(), 0);
+    }
 
-      function rotateCorners() {
-        console.log("Rotating corners");
-        changeGroup(players.LR, players.LL.source.groupIndex, 6);
-        changeGroup(players.LL, players.UR.source.groupIndex, 4);
-        changeGroup(players.UR, players.UL.source.groupIndex, 2);
-        changeGroup(players.UL, randomGroup(), 0);
+    function changeGroup(player, newGroupIndex, newFileIndex) {
+      player.source.i = newFileIndex;
+      player.source.groupIndex = newGroupIndex;
+      newGroupSize = groups[newGroupIndex].files.length;
+      if (newFileIndex > newGroupSize) {
+        console.log(
+          `File index ${newFileIndex} out of bounds: 0-${newGroupSize}`
+        );
+      } else {
+        player.source.src = groups[newGroupIndex].files[newFileIndex];
       }
+      refreshPlayer(player);
+    }
 
-      function changeGroup(player, newGroupIndex, newFileIndex) {
-        player.source.i = newFileIndex;
-        player.source.groupIndex = newGroupIndex;
-        newGroupSize = groups[newGroupIndex].files.length;
-        if (newFileIndex > newGroupSize) {
-          console.log(
-            `File index ${newFileIndex} out of bounds: 0-${newGroupSize}`
-          );
-        } else {
-          player.source.src = groups[newGroupIndex].files[newFileIndex];
-        }
-        refreshPlayer(player);
-      }
+    function refreshPlayer(player) {
+      player.load();
+      player.play();
+      player.playbackRate = playbackSpeed;
+    }
 
-      function refreshPlayer(player) {
-        player.load();
-        player.play();
-        player.playbackRate = playbackSpeed;
-      }
-
-      function randomGroup() {
-        newGroup = -1;
-        while (newGroup === -1) {
-          newGroup = Math.floor(Math.random() * groups.length);
-          for (let key in players) {
-            if (players[key].source === undefined) continue;
-            if (players[key].source.groupIndex === newGroup) {
-              newGroup = -1;
-            }
-          }
-        }
-        return newGroup;
-      }
-
-      function printPlayers() {
+    function randomGroup() {
+      newGroup = -1;
+      while (newGroup === -1) {
+        newGroup = Math.floor(Math.random() * groups.length);
         for (let key in players) {
-          console.log(
-            `${players[key].id} ` +
-              `group: ${players[key].source.groupIndex} ` +
-              `file: ${players[key].source.i}`
-          );
+          if (players[key].source === undefined) continue;
+          if (players[key].source.groupIndex === newGroup) {
+            newGroup = -1;
+          }
         }
       }
-    </script>
-  </body>
+      return newGroup;
+    }
+
+    function printPlayers() {
+      for (let key in players) {
+        console.log(
+          `${players[key].id} ` +
+          `group: ${players[key].source.groupIndex} ` +
+          `file: ${players[key].source.i}`
+        );
+      }
+    }
+  </script>
+</body>
+
 </html>
