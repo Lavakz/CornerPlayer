@@ -124,9 +124,14 @@
     }
 
     function samePath(p1, p2) {
-      p1sub = p1.substring(0, 10);
-      p2sub = p2.substring(0, 10)
-      return p1sub === p2sub;
+      shorter = p1.length > p2.length ? p1 : p2;
+      for (var i = shorter.length; i >= 0; i--){
+        if (shorter.charAt(i) === "/"){
+          endIndex = i;
+          break;
+        }
+      }
+      return p1.substring(0, endIndex) === p2.substring(0, endIndex);
     }
 
     ////////////////////////////////////////////////////////////////
