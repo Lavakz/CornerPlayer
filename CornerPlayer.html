@@ -182,13 +182,11 @@
       // creates groups based on folders
       // selected folder must be in same folder as player
       filepicker.addEventListener("change", (event) => {
-        console.log(event);
         const dir = event.target.files;
         groups = [];
         f = [];
         currPath = dir[0].webkitRelativePath;
         for (const file of dir) {
-          console.log(file);
           if (
             file.name.split(".").pop() == "mp4" ||
             file.name.split(".").pop() == "webm"
@@ -208,7 +206,7 @@
         if (groups.length === 0) {// no nested folders
           groups.push({ folder: getFolder(currPath), files: f });
         }
-        if (groups.length < 8) {
+        if (groups.length < 8 && pattern == "rotate") {
           groups = atLeastEightPerGroup(groups);
         }
         console.log(`Groups created`);
@@ -293,7 +291,7 @@
 
       function makeSource(groupIndex) {
         s = document.createElement("source");
-        s.src = groups[0].files[0];
+        s.src = groups[groupIndex].files[0];
         s.groupIndex = groupIndex;
         s.groupSize = groups[groupIndex].files.length;
         s.i = 0;
@@ -318,7 +316,6 @@
 
       function rotateOnEnded(player) {
         player.onended = function (e) {
-          console.log(player.id + " source: " + player.source.i);
           if (player.id === "UL" && player.source.i == 1) {
             rotateCorners();
           } else {
