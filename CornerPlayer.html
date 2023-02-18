@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Corner Player</title>
+    <style>
+      body {
+        background-color: pink;
+      }
+
+      #controlsContainer {
+        display: flex;
+        justify-content: left;
+        align-items: center;
+        width: 100%;
+      }
+
+      #controlsContainer > * {
+        z-index: 1;
+      }
+
+      span {
+        font-weight: bold;
+      }
+
+      video {
+        min-width: 100%;
+        min-height: 100%;
+        width: 50%;
+        height: auto;
+      }
+
+      .corner {
+        position: absolute;
+        overflow: hidden;
+        width: 50%;
+        height: 50%;
+      }
+
+      #volumeControl {
+        margin-left: auto;
+      }
+
+      #speedControl {
+        margin-left: 20px;
+      }
+
+      #volumeControl,
+      #speedControl {
+        display: flex;
+        align-items: center;
+      }
+
+      #ULcorner {
+        top: 0px;
+        left: 0px;
+      }
+
+      #URcorner {
+        top: 0px;
+        left: 50%;
+      }
+
+      #LLcorner {
+        top: 50%;
+        left: 0px;
+      }
+
+      #LRcorner {
+        top: 50%;
+        left: 50%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="controlsContainer">
+      <input id="playButton" type="button" onclick="play()" value="Play" />
+      <input
+        id="filepicker"
+        type="file"
+        name="selector"
+        accept="video/mp4, video/webm"
+        webkitdirectory
+      />
+      <div id="volumeControl">
+        <span>Volume: </span>
+        <input
+          id="volumeSlider"
+          type="range"
+          onchange="updateVolume(this.value)"
+          min="0"
+          max="100"
+          value="1"
+        />
+        <span id="volumeDisplay"></span>
+      </div>
+      <div id="speedControl">
+        <span>Speed: </span>
+        <input
+          id="speedSlider"
+          type="range"
+          onchange="updateSpeed(this.value*0.1)"
+          min="0"
+          max="50"
+          value="1"
+        />
+        <span id="speedDisplay"></span>
+      </div>
+    </div>
+    <div id="corners">
+      <div id="ULcorner" class="corner">
+        <video id="UL" controls></video>
+      </div>
+      <div id="URcorner" class="corner">
+        <video id="UR" controls></video>
+      </div>
+      <div id="LLcorner" class="corner">
+        <video id="LL" controls></video>
+      </div>
+      <div id="LRcorner" class="corner">
+        <video id="LR" controls></video>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      //////////////////////////////// Controls ////////////////////////////////
+
+      randomInit = true;
+      initGroupIndices = [0, 1, 2, 3];
+      playbackSpeed = 1.5;
+
+      pattern = "rotate";
+      // pattern = "loop";
+
+      for (let key in players) {
+        players[key].volume = 50;
+      }
+      document.getElementById("volumeDisplay").innerHTML = 50;
+
+      var players = {};
+      document.getElementById("speedDisplay").innerHTML =
+        playbackSpeed.toFixed(1);
+
+      function updateSpeed(value) {
+        if (players.length === 0) {
+          return;
+        }
+        playbackSpeed = value;
+        document.getElementById("speedDisplay").innerHTML =
+          playbackSpeed.toFixed(1);
+        for (let key in players) {
+          refreshPlayer(players[key]);
+        }
+      }
+
+      function updateVolume(value) {
+        console.log(value);
+        if (players.length === 0) {
+          return;
+        }
+        document.getElementById("volumeDisplay").innerHTML = value;
+        for (let key in players) {
+          players[key].volume = value * 0.01;
+        }
+      }
+
+      function play() {
+        if (groups === undefined) {
+          console.log("Groups not found");
+          return;
+        }
+        document.getElementById("playButton").value = "Refresh";
+        main();
+      }
+
+      ///////////////////////////// Group creation /////////////////////////////
+      var groups = undefined;
+
+      // creates groups based on folders
+      // selected folder must be in same folder as player
+      filepicker.addEventListener("change", (event) => {
+        console.log(event);
+        const dir = event.target.files;
+        groups = [];
+        f = [];
+        currPath = dir[0].webkitRelativePath;
+        for (const file of dir) {
+          console.log(file);
+          if (
+            file.name.split(".").pop() == "mp4" ||
+            file.name.split(".").pop() == "webm"
+          ) {
+            newPath = file.webkitRelativePath;
+            newFolder = getFolder(newPath);
+            if (getFolder(currPath) === getFolder(newPath)) {
+              f.push(newPath);
+            } else {
+              f.push(newPath);
+              groups.push({ folder: getFolder(currPath), files: f });
+              f = [];
+              currPath = newPath;
+            }
+          }
+        }
+        if (groups.length === 0) {// no nested folders
+          groups.push({ folder: getFolder(currPath), files: f });
+        }
+        if (groups.length < 8) {
+          groups = atLeastEightPerGroup(groups);
+        }
+        console.log(`Groups created`);
+        console.log(groups);
+      });
+
+      function getFolder(path) {
+        for (var i = path.length - 1; i >= 0; i--) {
+          if (path.charAt(i) === "/") {
+            return "/" + path.substring(0, i + 1);
+          }
+        }
+      }
+
+      function atLeastEightPerGroup(groups) {
+        var newGroups = [];
+        groups.forEach(function (group) {
+          var i = 0;
+          while (group.files.length < 8) {
+            group.files.push(
+              group.files[Math.floor(Math.random() * group.files.length)]
+            );
+          }
+          newGroups.push(group);
+        });
+        return newGroups;
+      }
+
+      // fetch("json/" + input + ".json")
+      //   .then(response => response.json())
+      //   .then(data => {
+      //     groups = data;
+      //   });
+
+      //////////////////////////////// Video ////////////////////////////////
+
+      function main() {
+        players = getPlayers();
+        initSources(players);// error here
+        for (let key in players) refreshPlayer(players[key]);
+        setPattern(players, pattern);
+      }
+
+      function setPattern(players, p) {
+        for (let key in players) {
+          if (p === "rotate") {
+            rotateOnEnded(players[key]);
+          } else if (p === "loop") {
+            incrementOnEnded(players[key]);
+          } else {
+            console.log("Pattern not recognized: " + p);
+          }
+          players[key].playbackRate = playbackSpeed;
+        }
+      }
+
+      function getPlayers() {
+        players = {};
+        ids = ["UR", "UL", "LL", "LR"];
+        for (const key of ids) {
+          players[key] = document.getElementById(key);
+        }
+        return players;
+      }
+
+      function initSources(players) {
+        if (players === undefined) {
+          console.log("players not found");
+          return;
+        }
+        var i = 0;
+        for (let key in players) {
+          players[key].innerHTML = "";
+          players[key].source = players[key].appendChild(
+            randomInit
+              ? makeSource(randomGroup())
+              : makeSource(initGroupIndices[i])
+          );
+          i++;
+        }
+      }
+
+      function makeSource(groupIndex) {
+        s = document.createElement("source");
+        s.src = groups[0].files[0];
+        s.groupIndex = groupIndex;
+        s.groupSize = groups[groupIndex].files.length;
+        s.i = 0;
+        s.class = "source";
+        return s;
+      }
+
+      function incrementOnEnded(player) {
+        player.onended = function (e) {
+          incrementSource(player.source);
+          refreshPlayer(player);
+        };
+      }
+
+      function incrementSource(s) {
+        s.i++;
+        if (s.i >= s.groupSize) {
+          s.i = 0;
+        }
+        s.src = groups[s.groupIndex].files[s.i];
+      }
+
+      function rotateOnEnded(player) {
+        player.onended = function (e) {
+          console.log(player.id + " source: " + player.source.i);
+          if (player.id === "UL" && player.source.i == 1) {
+            rotateCorners();
+          } else {
+            incrementSource(player.source);
+            refreshPlayer(player);
+          }
+        };
+      }
+
+      function rotateCorners() {
+        console.log("Rotating corners");
+        changeGroup(players.LR, players.LL.source.groupIndex, 6);
+        changeGroup(players.LL, players.UR.source.groupIndex, 4);
+        changeGroup(players.UR, players.UL.source.groupIndex, 2);
+        changeGroup(players.UL, randomGroup(), 0);
+      }
+
+      function changeGroup(player, newGroupIndex, newFileIndex) {
+        player.source.i = newFileIndex;
+        player.source.groupIndex = newGroupIndex;
+        newGroupSize = groups[newGroupIndex].files.length;
+        if (newFileIndex > newGroupSize) {
+          console.log(
+            `File index ${newFileIndex} out of bounds: 0-${newGroupSize}`
+          );
+        } else {
+          player.source.src = groups[newGroupIndex].files[newFileIndex];
+        }
+        refreshPlayer(player);
+      }
+
+      function refreshPlayer(player) {
+        player.load();
+        player.play();
+        player.playbackRate = playbackSpeed;
+      }
+
+      function randomGroup() {
+        if (groups.length === 1) {
+          return 0;
+        }
+        newGroup = -1;
+        while (newGroup === -1) {
+          newGroup = Math.floor(Math.random() * groups.length);
+          for (let key in players) {
+            if (players[key].source === undefined) continue;
+            if (players[key].source.groupIndex === newGroup) {
+              newGroup = -1;
+            }
+          }
+        }
+        return newGroup;
+      }
+
+      function printPlayers() {
+        for (let key in players) {
+          console.log(
+            `${players[key].id} ` +
+              `group: ${players[key].source.groupIndex} ` +
+              `file: ${players[key].source.i}`
+          );
+        }
+      }
+    </script>
+  </body>
+</html>
